@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Chatbot</title>
-    <!-- Link to external CSS file -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='chatbotfroentend2.css') }}">
+    <!-- Link to external CSS file in Flask static folder -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='chatbotfrontend2.css') }}">
+    <style>/* minimal fallback styling if CSS missing */
+    #chatbox{max-height:60vh;overflow:auto;border:1px solid #ddd;padding:10px;margin-bottom:8px}
+    </style>
 </head>
 <body>
     <h1>Book Chatbot</h1>
@@ -13,20 +16,21 @@
         <p><strong>Bot:</strong> Hi! Let's talk about books. What's your favorite genre?</p>
     </div>
     <input type="text" id="message" placeholder="Type your message...">
-    <button onclick="sendMessage()">Send</button>
+    <button id="sendBtn">Send</button>
 
     <script>
         function sendMessage() {
-            const message = document.getElementById('message').value;
+            const messageInput = document.getElementById('message');
+            const message = messageInput.value.trim();
             if (!message) return;
-            
+
             // Add user message to chat
             const chatbox = document.getElementById('chatbox');
             chatbox.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
-            document.getElementById('message').value = '';
-            
-            // Send to backend (Flask /chat endpoint)
-            fetch('/chat', {
+            messageInput.value = '';
+
+            // Send to backend (use url_for to resolve the route)
+            fetch("{{ url_for('chat') }}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: message })
@@ -35,10 +39,15 @@
             .then(data => {
                 chatbox.innerHTML += `<p><strong>Bot:</strong> ${data.response}</p>`;
                 chatbox.scrollTop = chatbox.scrollHeight;  // Auto-scroll
+            })
+            .catch(err => {
+                console.error('Request failed', err);
+                chatbox.innerHTML += `<p><strong>Bot:</strong> Sorry, something went wrong.</p>`;
             });
         }
-        
-        // Allow Enter key to send
+
+        // Wire up UI events
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
         document.getElementById('message').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') sendMessage();
         });
